@@ -14,12 +14,16 @@ public class BTEditor : EditorWindow
     string openedBTPath;
     BTree curBTrees;
     List<string> behaviorList;
-    [MenuItem("Window/BTEditor")]   
+    Dictionary<String, String> behaviors;
+    List<Rect> windows = new List<Rect>();
+    int lastWindowId = 0;
 
+    [MenuItem("Window/BTEditor")]
     public static void ShowExample()
     {
         BTEditor wnd = GetWindow<BTEditor>();
         wnd.titleContent = new GUIContent("BTEditor");
+
     }
 
     public Rect windowRect;
@@ -29,8 +33,9 @@ public class BTEditor : EditorWindow
     void OnGUI()
     {
         BeginWindows();
-        windowRect = new Rect(rootVisualElement.layout.width*0.75f, 0, rootVisualElement.layout.width * 0.25f, rootVisualElement.layout.height);
+        windowRect = new Rect(rootVisualElement.layout.width * 0.75f, 0, rootVisualElement.layout.width * 0.25f, rootVisualElement.layout.height);
         windowRect = GUILayout.Window(10, windowRect, DoWindow, "Панель созд/ред деревьев");
+
         EndWindows();
 
         using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos, GUILayout.Width(1000), GUILayout.Height(1000)))
@@ -45,12 +50,14 @@ public class BTEditor : EditorWindow
 
         Rect clickArea = GUILayoutUtility.GetLastRect();
         Event curEv = Event.current;
+        behaviors = new Dictionary<string, string>();
 
         if (clickArea.Contains(curEv.mousePosition) && curEv.type == EventType.ContextClick)
         {
             //Do a thing, in this case a drop down menu
 
             GenericMenu menu = new GenericMenu();
+
             behaviorList = new List<string>();
             //GetComponentInChildren<BehaviourTreeNode>()
             foreach (Type type in Assembly.GetAssembly(typeof(BehaviourTreeNode)).GetTypes())
@@ -58,6 +65,10 @@ public class BTEditor : EditorWindow
                 if (type.IsClass && type.IsSubclassOf(typeof(BehaviourTreeNode))&& type.IsAbstract==false)
                 {
                     behaviorList.Add(type.Name);
+                    String parent = type.BaseType.Name;
+                    //Найти родителя
+                    behaviors.Add(type.Name, parent);
+
                 }
             }
             foreach (var item in behaviorList)
@@ -67,8 +78,10 @@ public class BTEditor : EditorWindow
             menu.ShowAsContext();
             curEv.Use();
         }
+        if(drowComposite())
+        {
 
-
+        }
 
     }
     void DoWindow(int unusedWindowID)
@@ -83,8 +96,8 @@ public class BTEditor : EditorWindow
             AssetDatabase.CreateAsset(temp , result);
 
         }
-        GUI.DragWindow();
-        
+        GUI.DragWindow(new Rect(0, 0, 10000, 20));
+
     }
     public void CreateGUI()
     {
@@ -101,7 +114,19 @@ public class BTEditor : EditorWindow
 
     void OnAppendNodeSelected(object nodeName)
     {
-
+        var nodeType = behaviors[nodeName.ToString()];
+        if(nodeType == "Composite")
+        {
+            drowComposite();
+        }
+        if(nodeType == "BehaviorTreeNode")
+        {
+            drowAction(nodeType);
+        }
+        if(nodeType == "Decorator")
+        {
+            drowDecorator();
+        }
     }
 
 
@@ -109,5 +134,23 @@ public class BTEditor : EditorWindow
     {
         // the menu item is marked as selected if it matches the current value of m_Color
         menu.AddItem(new GUIContent(menuPath), false, OnAppendNodeSelected, menuPath);
+    }
+    
+    void drowComposite()
+    {
+        lastWindowId += 1;
+        BeginWindows();
+        windows.Add(GUILayout.Window(lastWindowId, new Rect(Input.mousePosition.x, Input.mousePosition.y, 100, 100), DoWindow, "Компзит"));
+        EndWindows();
+    }
+
+    void drowDecorator(string name = "Новый декоратор")
+    {
+
+    }
+
+    void drowAction(string nodeType)
+    {
+
     }
 }
