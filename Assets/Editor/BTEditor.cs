@@ -13,6 +13,7 @@ public class BTEditor : EditorWindow
     Vector2 scrollPosition;
     string openedBTPath;
     BTree curBTrees;
+    GenericMenu menu;
     List<string> behaviorList;
     Dictionary<String, String> behaviors;
     List<Rect> windows = new List<Rect>();
@@ -56,7 +57,7 @@ public class BTEditor : EditorWindow
         {
             //Do a thing, in this case a drop down menu
 
-            GenericMenu menu = new GenericMenu();
+            menu = new GenericMenu();
 
             behaviorList = new List<string>();
             //GetComponentInChildren<BehaviourTreeNode>()
@@ -77,10 +78,6 @@ public class BTEditor : EditorWindow
             }
             menu.ShowAsContext();
             curEv.Use();
-        }
-        if(drowComposite())
-        {
-
         }
 
     }
@@ -117,15 +114,15 @@ public class BTEditor : EditorWindow
         var nodeType = behaviors[nodeName.ToString()];
         if(nodeType == "Composite")
         {
-            drowComposite();
+            drawComposite= true;
         }
         if(nodeType == "BehaviorTreeNode")
         {
-            drowAction(nodeType);
+            drawAction=true;
         }
         if(nodeType == "Decorator")
         {
-            drowDecorator();
+            drawDecorator=true;
         }
     }
 
@@ -136,21 +133,5 @@ public class BTEditor : EditorWindow
         menu.AddItem(new GUIContent(menuPath), false, OnAppendNodeSelected, menuPath);
     }
     
-    void drowComposite()
-    {
-        lastWindowId += 1;
-        BeginWindows();
-        windows.Add(GUILayout.Window(lastWindowId, new Rect(Input.mousePosition.x, Input.mousePosition.y, 100, 100), DoWindow, "Компзит"));
-        EndWindows();
-    }
-
-    void drowDecorator(string name = "Новый декоратор")
-    {
-
-    }
-
-    void drowAction(string nodeType)
-    {
-
-    }
+    
 }
