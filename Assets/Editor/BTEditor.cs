@@ -12,8 +12,9 @@ public class BTEditor : EditorWindow
 {
     Vector2 scrollPosition;
     string openedBTPath;
-    BTree curBTrees;
+    static BTree? curBTrees = null;
     GenericMenu menu;
+    bool drawComposite = false;
     List<string> behaviorList;
     Dictionary<String, String> behaviors;
     List<Rect> windows = new List<Rect>();
@@ -26,7 +27,7 @@ public class BTEditor : EditorWindow
         wnd.titleContent = new GUIContent("BTEditor");
 
     }
-
+    []
     public Rect windowRect;
 
     // Scroll position
@@ -44,10 +45,18 @@ public class BTEditor : EditorWindow
             scrollPos = scrollView.scrollPosition;
         }
         // Set up a scroll view
-        //scrollPos = GUI.BeginScrollView(new Rect(0, 0, position.width, position.height), scrollPos, new Rect(0, 0, 1000, 1000));
-        
+        scrollPos = GUI.BeginScrollView(new Rect(0, 0, position.width, position.height), scrollPos, new Rect(0, 0, 1000, 1000));
+        if(drawComposite)
+        {
+            BeginWindows();
+            lastWindowId += 1;
+            windowRect = new Rect(100, 100, 90, 50);
+            windowRect = GUILayout.Window(lastWindowId, windowRect, DoWindow, "Панель созд/ред деревьев");
+            EndWindows();
+            drawComposite = false;
+        }
         //// Close the scroll view
-        //GUI.EndScrollView();
+        GUI.EndScrollView();
 
         Rect clickArea = GUILayoutUtility.GetLastRect();
         Event curEv = Event.current;
@@ -104,9 +113,10 @@ public class BTEditor : EditorWindow
         
     }
 
-    public void Update()
+    public static void Open(BTree bTree)
     {
-        
+        BTEditor window = GetWindow<BTEditor>("Behavior tree Editor");
+        curBTrees = bTree;
     }
 
     void OnAppendNodeSelected(object nodeName)
@@ -118,11 +128,11 @@ public class BTEditor : EditorWindow
         }
         if(nodeType == "BehaviorTreeNode")
         {
-            drawAction=true;
+            //drawAction=true;
         }
         if(nodeType == "Decorator")
         {
-            drawDecorator=true;
+            //drawDecorator=true;
         }
     }
 
