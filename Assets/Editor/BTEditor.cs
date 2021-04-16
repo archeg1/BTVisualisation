@@ -41,13 +41,16 @@ public class BTEditor : EditorWindow
 
         EndWindows();
 
-        if(curBTrees!=null)
+        if (curBTrees != null)
         {
             HandleEvents(Event.current);
+
             //PaintNodes();
             //PaintCurves();
 
         }
+
+        
         /*
         using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos, GUILayout.Width(1000), GUILayout.Height(1000)))
         {
@@ -97,25 +100,24 @@ public class BTEditor : EditorWindow
     }
     void DoWindow(int unusedWindowID)
     {
-        if(GUILayout.Button("Создать новое дерево поведения"))
+        if (GUILayout.Button("Создать новое дерево поведения"))
         {
             string result = EditorUtility.SaveFilePanel("Сохранить дерево", "Assets", "BehaviorTree", "asset");
-            result = result.Substring(result.IndexOf("Assets"),result.Length- result.IndexOf("Assets"));
-            var temp = ScriptableObject.CreateInstance<BTree>();
+            result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
+            curBTrees = ScriptableObject.CreateInstance<BTree>();
             //temp.name = result.Replace(".asset","");
 
-            AssetDatabase.CreateAsset(temp , result);
+            AssetDatabase.CreateAsset(curBTrees, result);
 
         }
-        GUI.DragWindow(new Rect(0, 0, 10000, 20));
-
     }
     public void CreateGUI()
     {
+        
         // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
         float temp = root.layout.width;
-        
+
     }
 
     public static void Open(BTree bTree)
@@ -126,15 +128,15 @@ public class BTEditor : EditorWindow
 
     void HandleEvents(Event e)
     {
-        foreach(var node in curBTrees.nodes)
+        foreach (var node in curBTrees.nodes)
         {
-            
+            node.HandleEvent(e);
         }
 
-        switch(e.type)
+        switch (e.type)
         {
             case EventType.MouseDown:
-                if(e.button == 1)
+                if (e.button == 1)
                 {
                     OpenContextMenu(e.mousePosition);
                 }
@@ -157,7 +159,7 @@ public class BTEditor : EditorWindow
     void OnAppendNodeSelected(string nodeName, Vector2 mousPos)
     {
         var nodeType = behaviors[nodeName.ToString()];
-        BTree.Node node = new BTree.Node();
+        BTree.Node node = new BTree.Node(mousPos, nodeName);
         node.type = nodeType;
         node.nodeName = nodeName;
         node.Init();
@@ -168,8 +170,34 @@ public class BTEditor : EditorWindow
     void AddMenuItemForNode(GenericMenu menu, string menuPath, Vector2 mousPos)
     {
         // the menu item is marked as selected if it matches the current value of m_Color
-        menu.AddItem(new GUIContent(menuPath), false,()=>OnAppendNodeSelected(menuPath, mousPos));
+        menu.AddItem(new GUIContent(menuPath), false, () => OnAppendNodeSelected(menuPath, mousPos));
     }
-    
-    
+
+    void OnEnable()
+    {
+        AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+    }
+
+    void OnDisable()
+    {
+        AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+    }
+
+    public void OnBeforeAssemblyReload()
+    {
+        behaviors = new Dictionary<string, string>();
+        behaviorList = new List<string>();
+        foreach (Type type in Assembly.GetAssembly(typeof(BehaviourTreeNode)).GetTypes())
+        {
+            if (type.IsClass && type.IsSubclassOf(typeof(BehaviourTreeNode)) && type.IsAbstract == false)
+            {
+                behaviorList.Add(type.Name);
+                String parent = type.BaseType.Name;
+                //Найти родителя
+                behaviors.Add(type.Name, parent);
+
+            }
+        }
+    }
+
 }
