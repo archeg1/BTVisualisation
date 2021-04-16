@@ -12,12 +12,13 @@ public class BTEditor : EditorWindow
 {
     Vector2 scrollPosition;
     string openedBTPath;
-    static BTree? curBTrees = null;
+    static BTree curBTrees = null;
     GenericMenu menu;
     bool drawComposite = false;
     List<string> behaviorList;
     Dictionary<String, String> behaviors;
-    List<Rect> windows = new List<Rect>();
+    Dictionary<Rect, String> windows = new Dictionary<Rect, string>();
+    //List<Rect> windows = new List<Rect>();
     int lastWindowId = 0;
 
     [MenuItem("Window/BTEditor")]
@@ -27,7 +28,7 @@ public class BTEditor : EditorWindow
         wnd.titleContent = new GUIContent("BTEditor");
 
     }
-    []
+
     public Rect windowRect;
 
     // Scroll position
@@ -40,20 +41,23 @@ public class BTEditor : EditorWindow
 
         EndWindows();
 
+        if(curBTrees!=null)
+        {
+            HandleEvents(Event.current);
+            //PaintNodes();
+            //PaintCurves();
+
+        }
+        /*
         using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos, GUILayout.Width(1000), GUILayout.Height(1000)))
         {
             scrollPos = scrollView.scrollPosition;
         }
         // Set up a scroll view
         scrollPos = GUI.BeginScrollView(new Rect(0, 0, position.width, position.height), scrollPos, new Rect(0, 0, 1000, 1000));
-        if(drawComposite)
+        foreach(var key in windows.Keys)
         {
-            BeginWindows();
-            lastWindowId += 1;
-            windowRect = new Rect(100, 100, 90, 50);
-            windowRect = GUILayout.Window(lastWindowId, windowRect, DoWindow, "Панель созд/ред деревьев");
-            EndWindows();
-            drawComposite = false;
+            windows[key] = 
         }
         //// Close the scroll view
         GUI.EndScrollView();
@@ -88,6 +92,7 @@ public class BTEditor : EditorWindow
             menu.ShowAsContext();
             curEv.Use();
         }
+        */
 
     }
     void DoWindow(int unusedWindowID)
@@ -119,28 +124,51 @@ public class BTEditor : EditorWindow
         curBTrees = bTree;
     }
 
-    void OnAppendNodeSelected(object nodeName)
+    void HandleEvents(Event e)
     {
-        var nodeType = behaviors[nodeName.ToString()];
-        if(nodeType == "Composite")
+        foreach(var node in curBTrees.nodes)
         {
-            drawComposite= true;
+            
         }
-        if(nodeType == "BehaviorTreeNode")
+
+        switch(e.type)
         {
-            //drawAction=true;
-        }
-        if(nodeType == "Decorator")
-        {
-            //drawDecorator=true;
+            case EventType.MouseDown:
+                if(e.button == 1)
+                {
+                    OpenContextMenu(e.mousePosition);
+                }
+                break;
         }
     }
 
+    void OpenContextMenu(Vector2 mousPos)
+    {
+        menu = new GenericMenu();
 
-    void AddMenuItemForNode(GenericMenu menu, string menuPath)
+        foreach (var item in behaviorList)
+        {
+            AddMenuItemForNode(menu, item, mousPos);
+        }
+        menu.ShowAsContext();
+    }
+
+
+    void OnAppendNodeSelected(string nodeName, Vector2 mousPos)
+    {
+        var nodeType = behaviors[nodeName.ToString()];
+        BTree.Node node = new BTree.Node();
+        node.type = nodeType;
+        node.nodeName = nodeName;
+        node.Init();
+        curBTrees.nodes.Add(node);
+
+    }
+
+    void AddMenuItemForNode(GenericMenu menu, string menuPath, Vector2 mousPos)
     {
         // the menu item is marked as selected if it matches the current value of m_Color
-        menu.AddItem(new GUIContent(menuPath), false, OnAppendNodeSelected, menuPath);
+        menu.AddItem(new GUIContent(menuPath), false,()=>OnAppendNodeSelected(menuPath, mousPos));
     }
     
     
