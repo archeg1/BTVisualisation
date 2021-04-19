@@ -105,7 +105,7 @@ public class BTEditor : EditorWindow
             string result = EditorUtility.SaveFilePanel("Сохранить дерево", "Assets", "BehaviorTree", "asset");
             result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
             curBTrees = ScriptableObject.CreateInstance<BTree>();
-            //temp.name = result.Replace(".asset","");
+            curBTrees.name = result.Replace(".asset","");
 
             AssetDatabase.CreateAsset(curBTrees, result);
 
@@ -147,7 +147,22 @@ public class BTEditor : EditorWindow
     void OpenContextMenu(Vector2 mousPos)
     {
         menu = new GenericMenu();
+        behaviors = new Dictionary<string, string>();
+        behaviorList = new List<string>();
+        foreach (Type type in Assembly.GetAssembly(typeof(BehaviourTreeNode)).GetTypes())
+        {
+            var parent = type.BaseType;
+            bool abstr = type.IsAbstract;
+            if (type.IsClass && (type.IsSubclassOf(typeof(BehaviourTreeNode))||type.IsSubclassOf(typeof(SimpleProto.AI.BehaviourTrees.BehaviourTreeNode<UnityEngine.GameObject>))) && abstr == false)
+            {
+                behaviorList.Add(type.Name);
+                String fullName = type.AssemblyQualifiedName;
+                //Найти родителя
 
+                behaviors.Add(type.Name, fullName);
+
+            }
+        }
         foreach (var item in behaviorList)
         {
             AddMenuItemForNode(menu, item, mousPos);
@@ -185,19 +200,7 @@ public class BTEditor : EditorWindow
 
     public void OnBeforeAssemblyReload()
     {
-        behaviors = new Dictionary<string, string>();
-        behaviorList = new List<string>();
-        foreach (Type type in Assembly.GetAssembly(typeof(BehaviourTreeNode)).GetTypes())
-        {
-            if (type.IsClass && type.IsSubclassOf(typeof(BehaviourTreeNode)) && type.IsAbstract == false)
-            {
-                behaviorList.Add(type.Name);
-                String parent = type.BaseType.Name;
-                //Найти родителя
-                behaviors.Add(type.Name, parent);
-
-            }
-        }
+        
     }
 
 }

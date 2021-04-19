@@ -23,16 +23,17 @@ public class BTree : ScriptableObject
         public void Init()
         {
 
-
-            Type myType = 
-            FieldInfo[] myFields = myType.GetFields();
-            foreach(var field in myFields)
+            Type myType = Type.GetType(type);
+            FieldInfo[] myFields = myType.GetFields(BindingFlags.Instance |
+                   BindingFlags.Public);
+            foreach (var field in myFields)
             {
-                var temp = field.FieldType.Name;
-
+                var type = field.FieldType.GetTypeInfo().GetGenericArguments()[0];
+                var name = field.Name;
+                //var typeOfType = type.BaseType.Name;
             }
         }
-
+       
         public void HandleEvent(Event e)
         {
             switch(e.type)
