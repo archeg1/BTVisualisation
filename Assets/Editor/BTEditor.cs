@@ -19,7 +19,7 @@ public class BTEditor : EditorWindow
     Dictionary<String, String> behaviors;
     Dictionary<Rect, String> windows = new Dictionary<Rect, string>();
     //List<Rect> windows = new List<Rect>();
-    int lastWindowId = 0;
+    uint lastWindowId = 0;
 
     [MenuItem("Window/BTEditor")]
     public static void ShowExample()
@@ -48,54 +48,7 @@ public class BTEditor : EditorWindow
             //PaintNodes();
             //PaintCurves();
 
-        }
-
-        
-        /*
-        using (var scrollView = new EditorGUILayout.ScrollViewScope(scrollPos, GUILayout.Width(1000), GUILayout.Height(1000)))
-        {
-            scrollPos = scrollView.scrollPosition;
-        }
-        // Set up a scroll view
-        scrollPos = GUI.BeginScrollView(new Rect(0, 0, position.width, position.height), scrollPos, new Rect(0, 0, 1000, 1000));
-        foreach(var key in windows.Keys)
-        {
-            windows[key] = 
-        }
-        //// Close the scroll view
-        GUI.EndScrollView();
-
-        Rect clickArea = GUILayoutUtility.GetLastRect();
-        Event curEv = Event.current;
-        behaviors = new Dictionary<string, string>();
-
-        if (clickArea.Contains(curEv.mousePosition) && curEv.type == EventType.ContextClick)
-        {
-            //Do a thing, in this case a drop down menu
-
-            menu = new GenericMenu();
-
-            behaviorList = new List<string>();
-            //GetComponentInChildren<BehaviourTreeNode>()
-            foreach (Type type in Assembly.GetAssembly(typeof(BehaviourTreeNode)).GetTypes())
-            {
-                if (type.IsClass && type.IsSubclassOf(typeof(BehaviourTreeNode))&& type.IsAbstract==false)
-                {
-                    behaviorList.Add(type.Name);
-                    String parent = type.BaseType.Name;
-                    //Найти родителя
-                    behaviors.Add(type.Name, parent);
-
-                }
-            }
-            foreach (var item in behaviorList)
-            {
-                AddMenuItemForNode(menu, item);
-            }
-            menu.ShowAsContext();
-            curEv.Use();
-        }
-        */
+        }       
 
     }
     void DoWindow(int unusedWindowID)
@@ -173,11 +126,10 @@ public class BTEditor : EditorWindow
 
     void OnAppendNodeSelected(string nodeName, Vector2 mousPos)
     {
+
         var nodeType = behaviors[nodeName.ToString()];
-        BTree.Node node = new BTree.Node(mousPos, nodeName);
-        node.type = nodeType;
-        node.nodeName = nodeName;
-        node.Init();
+        var ID = lastWindowId + 1;
+        BTree.Node node = new BTree.Node(mousPos, nodeType, nodeName, ID);
         curBTrees.nodes.Add(node);
 
     }
