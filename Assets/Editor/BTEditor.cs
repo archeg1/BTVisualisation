@@ -10,16 +10,12 @@ using System.Reflection;
 
 public class BTEditor : EditorWindow
 {
-    Vector2 scrollPosition;
-    string openedBTPath;
     static BTree curBTrees = null;
     GenericMenu menu;
-    bool drawComposite = false;
     List<string> behaviorList;
     Dictionary<String, String> behaviors;
-    Dictionary<Rect, String> windows = new Dictionary<Rect, string>();
-    //List<Rect> windows = new List<Rect>();
-    uint lastWindowId = 0;
+    int lastWindowId = 0;
+    int toolbarInt = 0;
 
     [MenuItem("Window/BTEditor")]
     public static void ShowExample()
@@ -30,30 +26,69 @@ public class BTEditor : EditorWindow
     }
 
     public Rect windowRect;
+    Rect mainRect;
+    Rect subRect;
 
     // Scroll position
     public Vector2 scrollPos = Vector2.zero;
     void OnGUI()
     {
-        BeginWindows();
-        windowRect = new Rect(rootVisualElement.layout.width * 0.75f, 0, rootVisualElement.layout.width * 0.25f, rootVisualElement.layout.height);
-        windowRect = GUILayout.Window(10, windowRect, DoWindow, "Панель созд/ред деревьев");
+        mainRect = new Rect(0, 0, rootVisualElement.layout.width * 0.75f, rootVisualElement.layout.height);
+        subRect = new Rect(rootVisualElement.layout.width * 0.75f, 0, rootVisualElement.layout.width * 0.25f, rootVisualElement.layout.height);
+        GUILayout.BeginArea(mainRect);
+        scrollPos = GUI.BeginScrollView(mainRect, scrollPos, new Rect(0, 0, 1000, 1000));
 
-        EndWindows();
+
+        BeginWindows();
 
         if (curBTrees != null)
         {
             HandleEvents(Event.current);
 
-            //PaintNodes();
+            PaintNodes();
             //PaintCurves();
 
-        }       
+        }
+
+        EndWindows();
+
+        GUI.EndScrollView();
+        GUILayout.EndArea();
+
+        GUILayout.BeginArea(subRect);
+        string[] toolbarString = { "Main", "Node" };
+        toolbarInt = GUILayout.Toolbar(toolbarInt,toolbarString);
+        if(toolbarInt == 0)
+        {
+            if (GUILayout.Button("Create new \"Behavior tree\""))
+            {
+                string result = EditorUtility.SaveFilePanel("Save behavior tree", "Assets", "BehaviorTree", "asset");
+                result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
+                curBTrees = ScriptableObject.CreateInstance<BTree>();
+                curBTrees.name = result.Replace(".asset", "");
+                AssetDatabase.CreateAsset(curBTrees, result);
+            }
+            if (GUILayout.Button("Open \"Behavior tree\""))
+            {
+                string result = EditorUtility.OpenFilePanel("Open behavior tree", "Assets", "asset");
+                result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
+                curBTrees = (BTree)AssetDatabase.LoadAssetAtPath(result, typeof(BTree));
+            }
+            if (curBTrees != null)
+            {
+                if (GUILayout.Button("Close \"Behavior tree\""))
+                {
+                    curBTrees = null;
+                }
+            }
+        }        
+        GUILayout.EndArea();
+        
 
     }
     void DoWindow(int unusedWindowID)
     {
-        if (GUILayout.Button("Создать новое дерево поведения"))
+        if (GUILayout.Button("Create new \"Behavior tree\""))
         {
             string result = EditorUtility.SaveFilePanel("Сохранить дерево", "Assets", "BehaviorTree", "asset");
             result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
@@ -65,8 +100,7 @@ public class BTEditor : EditorWindow
         }
     }
     public void CreateGUI()
-    {
-        
+    {        
         // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
         float temp = root.layout.width;
@@ -81,11 +115,6 @@ public class BTEditor : EditorWindow
 
     void HandleEvents(Event e)
     {
-        foreach (var node in curBTrees.nodes)
-        {
-            node.HandleEvent(e);
-        }
-
         switch (e.type)
         {
             case EventType.MouseDown:
@@ -110,10 +139,7 @@ public class BTEditor : EditorWindow
             {
                 behaviorList.Add(type.Name);
                 String fullName = type.AssemblyQualifiedName;
-                //Найти родителя
-
                 behaviors.Add(type.Name, fullName);
-
             }
         }
         foreach (var item in behaviorList)
@@ -126,33 +152,36 @@ public class BTEditor : EditorWindow
 
     void OnAppendNodeSelected(string nodeName, Vector2 mousPos)
     {
-
         var nodeType = behaviors[nodeName.ToString()];
         var ID = lastWindowId + 1;
         BTree.Node node = new BTree.Node(mousPos, nodeType, nodeName, ID);
         curBTrees.nodes.Add(node);
-
     }
 
     void AddMenuItemForNode(GenericMenu menu, string menuPath, Vector2 mousPos)
     {
-        // the menu item is marked as selected if it matches the current value of m_Color
         menu.AddItem(new GUIContent(menuPath), false, () => OnAppendNodeSelected(menuPath, mousPos));
     }
 
-    void OnEnable()
+    public void PaintNodes()
     {
-        AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+        if (curBTrees !=null)
+        {
+            foreach(var node in curBTrees.nodes)
+            {
+                node.box = GUILayout.Window(node.ID, node.box, nodeFunc, node.name);
+            }
+            if(curBTrees.nodes.Count>0)
+            {
+                lastWindowId = curBTrees.nodes[curBTrees.nodes.Count - 1].ID;
+            }
+        }
     }
 
-    void OnDisable()
+    void nodeFunc(int unusedWindowID)
     {
-        AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
-    }
-
-    public void OnBeforeAssemblyReload()
-    {
-        
+        GUILayout.Button("Hi");
+        GUI.DragWindow();
     }
 
 }

@@ -9,7 +9,7 @@ public class BTree : ScriptableObject
 {
     public class Node
     {
-        public uint ID;
+        public int ID;
         // TODO: Use string with type name insstead of enum
         public readonly string type;
         public readonly string name;
@@ -17,9 +17,9 @@ public class BTree : ScriptableObject
         public Dictionary<string, string> InVariableParams;
         public Dictionary<string, string> OutVariableParams;
 
-        private Rect box;
+        public Rect box;
         public List<int>? childNodesID;
-        public Node(Vector2 mousPos, string nodeType, string nodeName, uint nodeID)
+        public Node(Vector2 mousPos, string nodeType, string nodeName, int nodeID)
         {
             ID = nodeID;
             type = nodeType;
