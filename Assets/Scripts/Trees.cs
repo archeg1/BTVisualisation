@@ -12,10 +12,11 @@ public class BTree : ScriptableObject
         public int ID;
         // TODO: Use string with type name insstead of enum
         public readonly string type;
+        public string baseType;
         public readonly string name;
         public string description;
-        public Dictionary<string, string> InVariableParams;
-        public Dictionary<string, string> OutVariableParams;
+        public Dictionary<string, List<string>> InVariableParams;
+        public Dictionary<string, List<string>> OutVariableParams;
 
         public Rect box;
         public List<int>? childNodesID;
@@ -28,9 +29,10 @@ public class BTree : ScriptableObject
         }
         public void Init(Vector2 mousPos)
         {
-            InVariableParams = new Dictionary<string, string>();
-            OutVariableParams = new Dictionary<string, string>();
+            InVariableParams = new Dictionary<string, List<string>>();
+            OutVariableParams = new Dictionary<string, List<string>>();
             Type myType = Type.GetType(type);
+            baseType = myType.BaseType.Name;
             FieldInfo[] myFields = myType.GetFields(BindingFlags.Instance |
                 BindingFlags.NonPublic|
                 BindingFlags.Public);
@@ -38,17 +40,28 @@ public class BTree : ScriptableObject
             foreach (var field in myFields)
             {
                 string type = field.FieldType.Name;
-                string innerType = field.FieldType.GetTypeInfo().GetGenericArguments()[0].AssemblyQualifiedName;
-                int index1 = field.Name.IndexOf('<');
-                int index2 = field.Name.IndexOf('>');
-                string fieldName = field.Name.Substring(index1 + 1, index2 - index1 - 1);
-                if (type.Contains("InVariable"))
+                if (type.Contains("InVariable") || type.Contains("OutVariable"))
                 {
-                    InVariableParams.Add(fieldName, innerType);
-                }
-                if (type.Contains("OutVariable"))
-                {
-                    OutVariableParams.Add(fieldName, innerType);
+                    string innerType = field.FieldType.GetTypeInfo().GetGenericArguments()[0].AssemblyQualifiedName;
+                    int index1 = field.Name.IndexOf('<');
+                    int index2 = field.Name.IndexOf('>');
+                    string fieldName = field.Name.Substring(index1 + 1, index2 - index1 - 1);
+                    List<string> fieldDescription = new List<string>();
+                    if (type.Contains("InVariable"))
+                    {
+                        fieldDescription.Add(innerType); // type of value
+                        fieldDescription.Add("False"); // isExternal
+                        fieldDescription.Add(""); // value
+                        fieldDescription.Add(""); // variableName
+
+                        InVariableParams.Add(fieldName, fieldDescription);
+                    }
+                    if (type.Contains("OutVariable"))
+                    {
+                        fieldDescription.Add(innerType); // type of value
+                        fieldDescription.Add(""); // outVariableName
+                        OutVariableParams.Add(fieldName, fieldDescription);
+                    }
                 }
             }
             box = new Rect(mousPos, new Vector2( 300, InVariableParams.Count * 50 + OutVariableParams.Count * 50 + 100));
@@ -74,7 +87,14 @@ public class BTree : ScriptableObject
     [SerializeField]
     public string TreesName;
     [SerializeField]
-    public List<Node> nodes = new List<Node>();
+    public List<Node> nodes;
+
+    BTree()
+    {
+        nodes = new List<Node>();
+        Node root = new Node(new Vector2(50,10), typeof(RepeatForever).AssemblyQualifiedName, "Root", 0);
+        nodes.Add(root);
+    }
 
 
 

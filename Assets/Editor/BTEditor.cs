@@ -72,7 +72,8 @@ public class BTEditor : EditorWindow
             {
                 string result = EditorUtility.OpenFilePanel("Open behavior tree", "Assets", "asset");
                 result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
-                curBTrees = (BTree)AssetDatabase.LoadAssetAtPath(result, typeof(BTree));
+                curBTrees= (BTree)AssetDatabase.LoadAssetAtPath(result, typeof(BTree));
+                int a = 0;
             }
             if (curBTrees != null)
             {
@@ -85,19 +86,6 @@ public class BTEditor : EditorWindow
         GUILayout.EndArea();
         
 
-    }
-    void DoWindow(int unusedWindowID)
-    {
-        if (GUILayout.Button("Create new \"Behavior tree\""))
-        {
-            string result = EditorUtility.SaveFilePanel("Сохранить дерево", "Assets", "BehaviorTree", "asset");
-            result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
-            curBTrees = ScriptableObject.CreateInstance<BTree>();
-            curBTrees.name = result.Replace(".asset","");
-
-            AssetDatabase.CreateAsset(curBTrees, result);
-
-        }
     }
     public void CreateGUI()
     {        
@@ -180,8 +168,57 @@ public class BTEditor : EditorWindow
 
     void nodeFunc(int unusedWindowID)
     {
-        GUILayout.Button("Hi");
+
+        BTree.Node windowNode = null;
+        foreach (var node in curBTrees.nodes)
+        {
+            if(node.ID == unusedWindowID)
+            {
+                windowNode = node;
+                break;
+            }
+        }
+
+        var InVariableParams = windowNode.InVariableParams;
+        if (InVariableParams.Count > 0)
+        {
+            GUILayout.Label("Inner values");
+            foreach (var innerFieldName in InVariableParams.Keys)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(innerFieldName);
+                InVariableParams[innerFieldName][1] = GUILayout.Toggle(bool.Parse(InVariableParams[innerFieldName][1]), new GUIContent("isExternal")).ToString();
+                if (bool.Parse(InVariableParams[innerFieldName][1]))
+                {
+
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
+
+        Event e = Event.current;
+        if(e.type == EventType.MouseDown)
+        {
+            if(e.button == 1)
+            {
+                OpenNodeContextMenu(windowNode.baseType, windowNode);
+            }
+        }
         GUI.DragWindow();
     }
+
+    void OpenNodeContextMenu( string rootType, BTree.Node windowNode)
+    {
+        menu = new GenericMenu();
+        menu.AddItem(new GUIContent("Remove node"), false, () => OnDeleteNodeSelected(windowNode));
+        menu.ShowAsContext();
+
+    }
+
+    void OnDeleteNodeSelected(BTree.Node windowNode)
+    {
+        curBTrees.nodes.Remove(windowNode);
+    }
+
 
 }
