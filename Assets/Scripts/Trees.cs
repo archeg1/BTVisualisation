@@ -64,7 +64,7 @@ public class BTree : ScriptableObject
                     }
                 }
             }
-            box = new Rect(mousPos, new Vector2( 300, InVariableParams.Count * 50 + OutVariableParams.Count * 50 + 100));
+            box = new Rect(mousPos, new Vector2( 10,10));
 
         }
        

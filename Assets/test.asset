@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0eb7fd0373c98964483fc2506d4bfd3d, type: 3}
-  m_Name: text
-  m_EditorClassIdentifier: 
+  m_Script: {fileID: 0}
+  m_Name: test
+  m_EditorClassIdentifier: Assembly-CSharp::BTree
   TreesName: 
