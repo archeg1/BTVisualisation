@@ -9,16 +9,24 @@ public class BTree : ScriptableObject
 {
     public class Node
     {
+        [SerializeField]
         public int ID;
         // TODO: Use string with type name insstead of enum
+        [SerializeField]
         public readonly string type;
+        [SerializeField]
         public string baseType;
+        [SerializeField]
         public readonly string name;
+        [SerializeField]
         public string description;
+        [SerializeField]
         public Dictionary<string, List<string>> InVariableParams;
+        [SerializeField]
         public Dictionary<string, List<string>> OutVariableParams;
-
+        [SerializeField]
         public Rect box;
+        [SerializeField]
         public List<int>? childNodesID;
         public Node(Vector2 mousPos, string nodeType, string nodeName, int nodeID)
         {
