@@ -18,6 +18,8 @@ public class BTEditor : EditorWindow
     int lastWindowId = 0;
     int toolbarInt = 0;
 
+    BTree.Node parentNode = null;
+
     [MenuItem("Window/BTEditor")]
     public static void ShowExample()
     {
@@ -47,7 +49,7 @@ public class BTEditor : EditorWindow
             HandleEvents(Event.current);
 
             PaintNodes();
-            //PaintCurves();
+            PaintCurves();
 
         }
 
@@ -113,6 +115,37 @@ public class BTEditor : EditorWindow
                 }
                 break;
         }
+    }
+
+    void PaintCurves()
+    {
+        foreach(var node in curBTrees.nodes)
+        {
+            if (node.childNodesID.Count > 0)
+            {
+                foreach (var id in node.childNodesID)
+                {
+                    var tempNode = FindNodeByID(id);
+                    DrawNodeCurve(node.box, tempNode.box);
+                }
+            }
+        }
+    }
+
+    BTree.Node FindNodeByID(int id)
+    {
+        BTree.Node result;
+        result = null;
+        foreach(var node in curBTrees.nodes)
+        {
+            if (node.ID == id)
+            {
+                result = node;
+            }
+        }
+
+        return result;
+
     }
 
     void OpenContextMenu(Vector2 mousPos)
@@ -273,6 +306,10 @@ public class BTEditor : EditorWindow
     {
         menu = new GenericMenu();
         menu.AddItem(new GUIContent("Remove node"), false, () => OnDeleteNodeSelected(windowNode));
+        if(!windowNode.baseType.Contains("BehaviourTreeNode"))
+        {
+            menu.AddItem(new GUIContent("AddChild"), false, () => OnAddChildSelected(windowNode));
+        }
         menu.ShowAsContext();
 
     }
@@ -309,5 +346,17 @@ public class BTEditor : EditorWindow
             return Vector3.zero;
         }
 
+    }
+
+    void DrawNodeCurve(Rect start, Rect end)
+    {
+        Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
+        Vector3 endPos = new Vector3(end.x, end.y + end.height / 2, 0);
+        Vector3 startTan = startPos + Vector3.right * 50;
+        Vector3 endTan = endPos + Vector3.left * 50;
+        Color shadowCol = new Color(0, 0, 0, 0.06f);
+        for (int i = 0; i < 3; i++) // Draw a shadow
+            Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
+        Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
     }
 }
