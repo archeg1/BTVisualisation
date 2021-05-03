@@ -20,6 +20,9 @@ public class BTEditor : EditorWindow
 
     BTree.Node parentNode = null;
 
+    BTree.Node selectedNode = null;
+    
+
     [MenuItem("Window/BTEditor")]
     public static void ShowExample()
     {
@@ -36,11 +39,15 @@ public class BTEditor : EditorWindow
     public Vector2 scrollPos = Vector2.zero;
     void OnGUI()
     {
-        mainRect = new Rect(0, 0, rootVisualElement.layout.width * 0.75f, rootVisualElement.layout.height);
-        subRect = new Rect(rootVisualElement.layout.width * 0.75f, 0, rootVisualElement.layout.width * 0.25f, rootVisualElement.layout.height);
+        if(Event.current.type == EventType.MouseMove)
+        {
+            Repaint();
+        }
+        mainRect = new Rect(0, 0, rootVisualElement.layout.width * 0.7f, rootVisualElement.layout.height);
+        subRect = new Rect(rootVisualElement.layout.width * 0.70f, 0, rootVisualElement.layout.width * 0.3f, rootVisualElement.layout.height);
         GUILayout.BeginArea(mainRect);
         scrollPos = GUI.BeginScrollView(mainRect, scrollPos, new Rect(0, 0, 1000, 1000));
-
+        wantsMouseMove = true;
 
         BeginWindows();
 
@@ -86,6 +93,93 @@ public class BTEditor : EditorWindow
                 }
             }
         }
+        else
+        {
+            if(selectedNode == null)
+            {
+                GUILayout.Label("Choose one of node(if there exist)");
+            }
+            else
+            {
+                var InVariableParams = selectedNode.InVariableParams;
+                if (InVariableParams.Count > 0)
+                {
+                    GUILayout.Label("Inner values");
+                    foreach (var innerFieldName in InVariableParams.Keys)
+                    {
+                        string type = InVariableParams[innerFieldName][0];
+                        string isExternal = InVariableParams[innerFieldName][1];
+                        string value = InVariableParams[innerFieldName][2];
+                        string variableName = InVariableParams[innerFieldName][3];
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label(innerFieldName);
+                        isExternal = GUILayout.Toggle(bool.Parse(isExternal), new GUIContent("isExternal")).ToString();
+                        if (bool.Parse(isExternal))
+                        {
+                            variableName = GUILayout.TextField(variableName);
+                        }
+                        else
+                        {
+                            if (type.Contains("System.Single"))
+                            {
+                                float f = 0;
+                                float.TryParse(value, out f);
+                                Rect position = EditorGUILayout.GetControlRect(false, 2 * EditorGUIUtility.singleLineHeight); // Get two lines for the control
+                                position.height *= 0.5f;
+                                value = EditorGUI.Slider(position, f, -100, 100).ToString();
+                                position.y += position.height;
+                                position.x += EditorGUIUtility.labelWidth;
+                                position.width -= EditorGUIUtility.labelWidth + 54;
+                                GUIStyle style = GUI.skin.label;
+
+                                style.alignment = TextAnchor.UpperLeft; EditorGUI.LabelField(position, "Min", style);
+                                style.alignment = TextAnchor.UpperRight; EditorGUI.LabelField(position, "Max", style);
+                            }
+                            if (type.Contains("Vector3"))
+                            {
+                                Vector3 vector3 = StringToVector3(value);
+                                vector3 = EditorGUILayout.Vector3Field("", vector3);
+                                value = vector3.ToString();
+                            }
+                            if (type.Contains("Int32"))
+                            {
+                                int i = 0;
+                                int.TryParse(value, out i);
+                                i = EditorGUILayout.IntField(i);
+                                value = i.ToString();
+                            }
+                            //switch(InVariableParams[innerFieldName][0])
+                            //{
+                            //    case "System.Single":
+                            //        InVariableParams[innerFieldName][2] = GUILayout.HorizontalSlider(float.Parse(InVariableParams[innerFieldName][2]), -100, 100).ToString();
+                            //        break;
+                            //}
+                        }
+                        GUILayout.EndHorizontal();
+                        InVariableParams[innerFieldName][1] = isExternal;
+                        InVariableParams[innerFieldName][2] = value;
+                        InVariableParams[innerFieldName][3] = variableName;
+                    }
+                }
+                var OutVariableParams = selectedNode.OutVariableParams;
+                if (OutVariableParams.Count > 0)
+                {
+                    GUILayout.Label("Out values");
+                    foreach (var outFieldName in OutVariableParams.Keys)
+                    {
+                        string outVariableName = OutVariableParams[outFieldName][1];
+                        GUILayout.BeginHorizontal();
+                        GUIStyle style = new GUIStyle();
+                        style.alignment = TextAnchor.MiddleLeft;
+                        style.normal.textColor = Color.white;
+                        GUILayout.Label(outFieldName, style);
+                        outVariableName = GUILayout.TextField(outVariableName);
+                        GUILayout.EndHorizontal();
+                        OutVariableParams[outFieldName][1] = outVariableName;
+                    }
+                }
+            }
+        }
         GUILayout.EndArea();
 
 
@@ -113,22 +207,35 @@ public class BTEditor : EditorWindow
                 {
                     OpenContextMenu(e.mousePosition);
                 }
+                if(e.button == 0)
+                {
+                    selectedNode = null;
+                }
                 break;
+
         }
     }
 
     void PaintCurves()
     {
-        foreach(var node in curBTrees.nodes)
+        if (curBTrees != null)
         {
-            if (node.childNodesID.Count > 0)
+            foreach (var node in curBTrees.nodes)
             {
                 foreach (var id in node.childNodesID)
                 {
                     var tempNode = FindNodeByID(id);
                     DrawNodeCurve(node.box, tempNode.box);
-                }
+                }                
             }
+        }
+        
+
+        if (parentNode != null)
+        {
+            
+            DrawNodeCurve(parentNode.box,Event.current.mousePosition);
+            
         }
     }
 
@@ -212,84 +319,13 @@ public class BTEditor : EditorWindow
                 break;
             }
         }
-
-        var InVariableParams = windowNode.InVariableParams;
-        if (InVariableParams.Count > 0)
+        int lenght = windowNode.name.Length;
+        var text = " ";
+        for (int i = 0; i <lenght;i++)
         {
-            GUILayout.Label("Inner values");
-            foreach (var innerFieldName in InVariableParams.Keys)
-            {
-                string type = InVariableParams[innerFieldName][0];
-                string isExternal = InVariableParams[innerFieldName][1];
-                string value = InVariableParams[innerFieldName][2];
-                string variableName = InVariableParams[innerFieldName][3];
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(innerFieldName);
-                isExternal = GUILayout.Toggle(bool.Parse(isExternal), new GUIContent("isExternal")).ToString();
-                if (bool.Parse(isExternal))
-                {
-                    variableName = GUILayout.TextField(variableName);
-                }
-                else
-                {
-                    if (type.Contains("System.Single"))
-                    {
-                        float f = 0;
-                        float.TryParse(value, out f);
-                        Rect position = EditorGUILayout.GetControlRect(false, 2 * EditorGUIUtility.singleLineHeight); // Get two lines for the control
-                        position.height *= 0.5f;
-                        value = EditorGUI.Slider(position, f, -100, 100).ToString();
-                        position.y += position.height;
-                        position.x += EditorGUIUtility.labelWidth;
-                        position.width -= EditorGUIUtility.labelWidth + 54;
-                        GUIStyle style = GUI.skin.label;
-
-                        style.alignment = TextAnchor.UpperLeft; EditorGUI.LabelField(position, "Min", style);
-                        style.alignment = TextAnchor.UpperRight; EditorGUI.LabelField(position, "Max", style);
-                    }
-                    if (type.Contains("Vector3"))
-                    {
-                        Vector3 vector3 = StringToVector3(value);
-                        vector3 = EditorGUILayout.Vector3Field("",vector3);
-                        value = vector3.ToString();
-                    }
-                    if (type.Contains("Int32"))
-                    {
-                        int i = 0;
-                        int.TryParse(value, out i);
-                        i = EditorGUILayout.IntField(i);
-                        value = i.ToString();
-                    }
-                    //switch(InVariableParams[innerFieldName][0])
-                    //{
-                    //    case "System.Single":
-                    //        InVariableParams[innerFieldName][2] = GUILayout.HorizontalSlider(float.Parse(InVariableParams[innerFieldName][2]), -100, 100).ToString();
-                    //        break;
-                    //}
-                }
-                GUILayout.EndHorizontal();
-                InVariableParams[innerFieldName][1] = isExternal;
-                InVariableParams[innerFieldName][2] = value;
-                InVariableParams[innerFieldName][3] = variableName;
-            }
+            text += "  ";
         }
-        var OutVariableParams = windowNode.OutVariableParams;
-        if(OutVariableParams.Count>0)
-        {
-            GUILayout.Label("Out values");
-            foreach(var outFieldName in OutVariableParams.Keys)
-            {
-                string outVariableName = OutVariableParams[outFieldName][1];
-                GUILayout.BeginHorizontal();
-                GUIStyle style = new GUIStyle();
-                style.alignment = TextAnchor.MiddleLeft;
-                style.normal.textColor = Color.white;
-                GUILayout.Label(outFieldName,style);
-                outVariableName = GUILayout.TextField(outVariableName);
-                GUILayout.EndHorizontal();
-                OutVariableParams[outFieldName][1] = outVariableName;
-            }
-        }
+        GUILayout.Label(text);
 
         Event e = Event.current;
         if (e.type == EventType.MouseDown)
@@ -297,6 +333,15 @@ public class BTEditor : EditorWindow
             if (e.button == 1)
             {
                 OpenNodeContextMenu(windowNode.baseType, windowNode);
+            }
+            if (e.button == 0 && parentNode != null)
+            {
+                parentNode.childNodesID.Add(windowNode.ID);
+                parentNode = null;
+            }
+            if (e.button == 0)
+            {
+                selectedNode = windowNode;
             }
         }
         GUI.DragWindow(new Rect(0, 0, 10000, 20));
@@ -314,8 +359,17 @@ public class BTEditor : EditorWindow
 
     }
 
+    void OnAddChildSelected( BTree.Node p)
+    {
+        parentNode = p;
+    }
     void OnDeleteNodeSelected(BTree.Node windowNode)
     {
+        int deletedNodeID = windowNode.ID;
+        foreach (var node in curBTrees.nodes)
+        {
+            node.childNodesID.Remove(deletedNodeID);
+        }
         curBTrees.nodes.Remove(windowNode);
     }
 
@@ -350,8 +404,21 @@ public class BTEditor : EditorWindow
 
     void DrawNodeCurve(Rect start, Rect end)
     {
-        Vector3 startPos = new Vector3(start.x + start.width, start.y + start.height / 2, 0);
-        Vector3 endPos = new Vector3(end.x, end.y + end.height / 2, 0);
+        Vector3 startPos = new Vector3(start.x + (start.width/2), start.y + start.height, 0);
+        Vector3 endPos = new Vector3(end.x + (end.width / 2), end.y, 0);
+        Vector3 startTan = startPos + Vector3.right * 50;
+
+        Vector3 endTan = endPos + Vector3.left * 50;
+        Color shadowCol = new Color(0, 0, 0, 0.06f);
+        for (int i = 0; i < 3; i++) // Draw a shadow
+            Handles.DrawBezier(startPos, endPos, startTan, endTan, shadowCol, null, (i + 1) * 5);
+        Handles.DrawBezier(startPos, endPos, startTan, endTan, Color.black, null, 1);
+    }
+
+    void DrawNodeCurve(Rect start, Vector2 end)
+    {
+        Vector3 startPos = new Vector3(start.x + (start.width / 2), start.y + start.height, 0);
+        Vector3 endPos = new Vector3(end.x, end.y, 0);
         Vector3 startTan = startPos + Vector3.right * 50;
         Vector3 endTan = endPos + Vector3.left * 50;
         Color shadowCol = new Color(0, 0, 0, 0.06f);

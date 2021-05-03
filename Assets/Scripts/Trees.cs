@@ -33,6 +33,7 @@ public class BTree : ScriptableObject
             ID = nodeID;
             type = nodeType;
             name = nodeName;
+            childNodesID = new List<int>();
             Init(mousPos);
         }
         public void Init(Vector2 mousPos)
@@ -76,18 +77,6 @@ public class BTree : ScriptableObject
 
         }
        
-        public void HandleEvent(Event e)
-        {
-            switch(e.type)
-            {
-                case EventType.MouseDown:
-                    if(box.Contains(e.mousePosition))
-                    {
-                        box.position += e.delta;
-                    }
-                    break;
-            }
-        }
     }
 
     // TODO: Add variables
