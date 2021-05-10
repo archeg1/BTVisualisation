@@ -89,6 +89,9 @@ public class BTEditor : EditorWindow
             {
                 if (GUILayout.Button("Close \"Behavior tree\""))
                 {
+                    EditorUtility.SetDirty(curBTrees);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
                     curBTrees = null;
                 }
             }

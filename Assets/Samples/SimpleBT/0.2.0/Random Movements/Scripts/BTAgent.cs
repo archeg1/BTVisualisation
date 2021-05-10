@@ -4,6 +4,7 @@ using UnityEngine;
 public class BTAgent : MonoBehaviour
 {
     private IBehaviourTreeNode _tree;
+    public ScriptableObject behavior;
     
     private void Start()
     {
