@@ -95,15 +95,14 @@ public class BTree : ScriptableObject
 
 
 
-    // TODO: Write function that creates a runtime-ready tree from description
-    //public IBehaviourTreeNode CreateRuntimeTree()
-    //{
-    //    IBehaviourTreeNode resultTree;
-
-    //    return resultTree;
-
-    //}
-    public IBehaviourTreeNode CreateNode(Node node)
+    //TODO: Write function that creates a runtime-ready tree from description
+    public IBehaviourTreeNode CreateRuntimeTree()
+    {
+        BTree.Node rootNode = nodes[0];
+        IBehaviourTreeNode resultTree = CreateNode(rootNode, null, null);
+        return resultTree;
+    }
+    public IBehaviourTreeNode CreateNode(Node node, Dictionary<string,string> InnerValues, Dictionary<string, string> OutputValues)
     {
         IBehaviourTreeNode resultNode;
         Type nodeType = Type.GetType(node.type);

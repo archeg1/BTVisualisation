@@ -138,7 +138,7 @@ public class BTEditor : EditorWindow
                             if (type.Contains("Vector3"))
                             {
                                 Vector3 vector3 = StringToVector3(value);
-                                vector3 = EditorGUILayout.Vector3Field("", vector3);
+                                vector3 = EditorGUILayout.Vector3Field("", vector3,GUILayout.MaxWidth(100));
                                 value = vector3.ToString();
                             }
                             if (type.Contains("Int32"))
@@ -365,12 +365,15 @@ public class BTEditor : EditorWindow
     }
     void OnDeleteNodeSelected(BTree.Node windowNode)
     {
-        int deletedNodeID = windowNode.ID;
-        foreach (var node in curBTrees.nodes)
+        if (windowNode.ID != 0)
         {
-            node.childNodesID.Remove(deletedNodeID);
+            int deletedNodeID = windowNode.ID;
+            foreach (var node in curBTrees.nodes)
+            {
+                node.childNodesID.Remove(deletedNodeID);
+            }
+            curBTrees.nodes.Remove(windowNode);
         }
-        curBTrees.nodes.Remove(windowNode);
     }
 
     public static Vector3 StringToVector3(string sVector)
