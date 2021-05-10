@@ -18,9 +18,11 @@ public class BTEditor : EditorWindow
     int lastWindowId = 0;
     int toolbarInt = 0;
 
-    BTree.Node parentNode = null;
+    string path = "";
 
-    BTree.Node selectedNode = null;
+    Node parentNode = null;
+
+    Node selectedNode = null;
     
 
     [MenuItem("Window/BTEditor")]
@@ -37,6 +39,8 @@ public class BTEditor : EditorWindow
 
     // Scroll position
     public Vector2 scrollPos = Vector2.zero;
+
+    static SerializedObject so; 
     void OnGUI()
     {
         if(Event.current.type == EventType.MouseMove)
@@ -53,6 +57,12 @@ public class BTEditor : EditorWindow
 
         if (curBTrees != null)
         {
+            so.Update();
+            if (GUI.changed)
+            {
+                EditorUtility.SetDirty(curBTrees);
+            }
+
             HandleEvents(Event.current);
 
             PaintNodes();
@@ -68,28 +78,38 @@ public class BTEditor : EditorWindow
         GUILayout.BeginArea(subRect);
         string[] toolbarString = { "Main", "Node" };
         toolbarInt = GUILayout.Toolbar(toolbarInt, toolbarString);
+
         if (toolbarInt == 0)
         {
+
             if (GUILayout.Button("Create new \"Behavior tree\""))
             {
-                string result = EditorUtility.SaveFilePanel("Save behavior tree", "Assets", "BehaviorTree", "asset");
-                result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
+                path = EditorUtility.SaveFilePanel("Save behavior tree", "Assets", "BehaviorTree", "asset");
+                path = path.Substring(path.IndexOf("Assets"), path.Length - path.IndexOf("Assets"));
                 curBTrees = ScriptableObject.CreateInstance<BTree>();
-                curBTrees.name = result.Replace(".asset", "");
-                AssetDatabase.CreateAsset(curBTrees, result);
+                curBTrees.TreesName = path.Replace(".asset", "");
+                curBTrees.nodes = new List<Node>();
+                Node root = new Node(new Vector2(50,10), typeof(RepeatForever).AssemblyQualifiedName, "Root", 0);
+                curBTrees.nodes.Add(root);
+                EditorUtility.SetDirty(curBTrees);
+                AssetDatabase.CreateAsset(curBTrees, path);
+                AssetDatabase.SaveAssets();
+                Selection.activeObject = curBTrees;
+                so = new SerializedObject(curBTrees);
+                parentNode = null;
             }
             if (GUILayout.Button("Open \"Behavior tree\""))
             {
                 string result = EditorUtility.OpenFilePanel("Open behavior tree", "Assets", "asset");
                 result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
                 curBTrees = (BTree)AssetDatabase.LoadAssetAtPath(result, typeof(BTree));
-                int a = 0;
+                so = new SerializedObject(curBTrees);
+                parentNode = null;
             }
             if (curBTrees != null)
             {
                 if (GUILayout.Button("Close \"Behavior tree\""))
                 {
-                    EditorUtility.SetDirty(curBTrees);
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
                     curBTrees = null;
@@ -108,14 +128,15 @@ public class BTEditor : EditorWindow
                 if (InVariableParams.Count > 0)
                 {
                     GUILayout.Label("Inner values");
-                    foreach (var innerFieldName in InVariableParams.Keys)
+                    int countInnerValues = InVariableParams.Count / 5;
+                    for (int i = 0; i< countInnerValues; i++)
                     {
-                        string type = InVariableParams[innerFieldName][0];
-                        string isExternal = InVariableParams[innerFieldName][1];
-                        string value = InVariableParams[innerFieldName][2];
-                        string variableName = InVariableParams[innerFieldName][3];
+                        string type = InVariableParams[i * 5 + 1];
+                        string isExternal = InVariableParams[i * 5 + 2];
+                        string value = InVariableParams[i * 5 + 3];
+                        string variableName = InVariableParams[i * 5 + 4];
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(innerFieldName);
+                        GUILayout.Label(InVariableParams[i*5]);
                         isExternal = GUILayout.Toggle(bool.Parse(isExternal), new GUIContent("isExternal")).ToString();
                         if (bool.Parse(isExternal))
                         {
@@ -146,10 +167,10 @@ public class BTEditor : EditorWindow
                             }
                             if (type.Contains("Int32"))
                             {
-                                int i = 0;
-                                int.TryParse(value, out i);
-                                i = EditorGUILayout.IntField(i);
-                                value = i.ToString();
+                                int j = 0;
+                                int.TryParse(value, out j);
+                                j = EditorGUILayout.IntField(j);
+                                value = j.ToString();
                             }
                             //switch(InVariableParams[innerFieldName][0])
                             //{
@@ -159,26 +180,27 @@ public class BTEditor : EditorWindow
                             //}
                         }
                         GUILayout.EndHorizontal();
-                        InVariableParams[innerFieldName][1] = isExternal;
-                        InVariableParams[innerFieldName][2] = value;
-                        InVariableParams[innerFieldName][3] = variableName;
+                        InVariableParams[i*5+2] = isExternal;
+                        InVariableParams[i * 5 + 3] = value;
+                        InVariableParams[i * 5 + 4] = variableName;
                     }
                 }
                 var OutVariableParams = selectedNode.OutVariableParams;
                 if (OutVariableParams.Count > 0)
                 {
+                    int countOutValues = InVariableParams.Count / 3;
                     GUILayout.Label("Out values");
-                    foreach (var outFieldName in OutVariableParams.Keys)
+                    for (int i = 0; i<countOutValues;i++)
                     {
-                        string outVariableName = OutVariableParams[outFieldName][1];
+                        string outVariableName = OutVariableParams[i*3+2];
                         GUILayout.BeginHorizontal();
                         GUIStyle style = new GUIStyle();
                         style.alignment = TextAnchor.MiddleLeft;
                         style.normal.textColor = Color.white;
-                        GUILayout.Label(outFieldName, style);
+                        GUILayout.Label(OutVariableParams[i * 3], style);
                         outVariableName = GUILayout.TextField(outVariableName);
                         GUILayout.EndHorizontal();
-                        OutVariableParams[outFieldName][1] = outVariableName;
+                        OutVariableParams[i * 3 + 2] = outVariableName;
                     }
                 }
             }
@@ -199,6 +221,8 @@ public class BTEditor : EditorWindow
     {
         BTEditor window = GetWindow<BTEditor>("Behavior tree Editor");
         curBTrees = bTree;
+
+        so = new SerializedObject(curBTrees);
     }
 
     void HandleEvents(Event e)
@@ -242,9 +266,9 @@ public class BTEditor : EditorWindow
         }
     }
 
-    BTree.Node FindNodeByID(int id)
+    Node FindNodeByID(int id)
     {
-        BTree.Node result;
+        Node result;
         result = null;
         foreach(var node in curBTrees.nodes)
         {
@@ -286,7 +310,7 @@ public class BTEditor : EditorWindow
     {
         var nodeType = behaviors[nodeName.ToString()];
         var ID = lastWindowId + 1;
-        BTree.Node node = new BTree.Node(mousPos, nodeType, nodeName, ID);
+        Node node = new Node(mousPos, nodeType, nodeName, ID);
         curBTrees.nodes.Add(node);
     }
 
@@ -302,6 +326,7 @@ public class BTEditor : EditorWindow
             foreach (var node in curBTrees.nodes)
             {
                 node.box = GUILayout.Window(node.ID, node.box, nodeFunc, node.name);
+
             }
             if (curBTrees.nodes.Count > 0)
             {
@@ -313,7 +338,7 @@ public class BTEditor : EditorWindow
     void nodeFunc(int unusedWindowID)
     {
 
-        BTree.Node windowNode = null;
+        Node windowNode = null;
         foreach (var node in curBTrees.nodes)
         {
             if (node.ID == unusedWindowID)
@@ -329,7 +354,6 @@ public class BTEditor : EditorWindow
             text += "  ";
         }
         GUILayout.Label(text);
-
         Event e = Event.current;
         if (e.type == EventType.MouseDown)
         {
@@ -350,7 +374,7 @@ public class BTEditor : EditorWindow
         GUI.DragWindow(new Rect(0, 0, 10000, 20));
     }
 
-    void OpenNodeContextMenu(string rootType, BTree.Node windowNode)
+    void OpenNodeContextMenu(string rootType, Node windowNode)
     {
         menu = new GenericMenu();
         menu.AddItem(new GUIContent("Remove node"), false, () => OnDeleteNodeSelected(windowNode));
@@ -362,11 +386,11 @@ public class BTEditor : EditorWindow
 
     }
 
-    void OnAddChildSelected( BTree.Node p)
+    void OnAddChildSelected( Node p)
     {
         parentNode = p;
     }
-    void OnDeleteNodeSelected(BTree.Node windowNode)
+    void OnDeleteNodeSelected(Node windowNode)
     {
         if (windowNode.ID != 0)
         {
