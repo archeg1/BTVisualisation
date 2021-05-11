@@ -128,15 +128,15 @@ public class BTEditor : EditorWindow
                 if (InVariableParams.Count > 0)
                 {
                     GUILayout.Label("Inner values");
-                    int countInnerValues = InVariableParams.Count / 5;
+                    int countInnerValues = InVariableParams.Count / 6;
                     for (int i = 0; i< countInnerValues; i++)
                     {
-                        string type = InVariableParams[i * 5 + 1];
-                        string isExternal = InVariableParams[i * 5 + 2];
-                        string value = InVariableParams[i * 5 + 3];
-                        string variableName = InVariableParams[i * 5 + 4];
+                        string type = InVariableParams[i * 6 + 1];
+                        string isExternal = InVariableParams[i * 6 + 2];
+                        string value = InVariableParams[i * 6 + 3];
+                        string variableName = InVariableParams[i * 6 + 4];
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(InVariableParams[i*5]);
+                        GUILayout.Label(InVariableParams[i*6]);
                         isExternal = GUILayout.Toggle(bool.Parse(isExternal), new GUIContent("isExternal")).ToString();
                         if (bool.Parse(isExternal))
                         {
@@ -180,15 +180,15 @@ public class BTEditor : EditorWindow
                             //}
                         }
                         GUILayout.EndHorizontal();
-                        InVariableParams[i*5+2] = isExternal;
-                        InVariableParams[i * 5 + 3] = value;
-                        InVariableParams[i * 5 + 4] = variableName;
+                        InVariableParams[i * 6 + 2] = isExternal;
+                        InVariableParams[i * 6 + 3] = value;
+                        InVariableParams[i * 6 + 4] = variableName;
                     }
                 }
                 var OutVariableParams = selectedNode.OutVariableParams;
                 if (OutVariableParams.Count > 0)
                 {
-                    int countOutValues = InVariableParams.Count / 3;
+                    int countOutValues = OutVariableParams.Count / 4;
                     GUILayout.Label("Out values");
                     for (int i = 0; i<countOutValues;i++)
                     {
@@ -197,10 +197,10 @@ public class BTEditor : EditorWindow
                         GUIStyle style = new GUIStyle();
                         style.alignment = TextAnchor.MiddleLeft;
                         style.normal.textColor = Color.white;
-                        GUILayout.Label(OutVariableParams[i * 3], style);
+                        GUILayout.Label(OutVariableParams[i * 4], style);
                         outVariableName = GUILayout.TextField(outVariableName);
                         GUILayout.EndHorizontal();
-                        OutVariableParams[i * 3 + 2] = outVariableName;
+                        OutVariableParams[i * 4 + 2] = outVariableName;
                     }
                 }
             }

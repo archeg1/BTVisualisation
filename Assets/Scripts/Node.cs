@@ -40,17 +40,20 @@ public class Node
             string type = field.FieldType.Name;
             if (type.Contains("InVariable") || type.Contains("OutVariable"))
             {
-                string innerType = field.FieldType.GetTypeInfo().GetGenericArguments()[0].AssemblyQualifiedName;
+
+                string innerType = field.FieldType.AssemblyQualifiedName;   //GetTypeInfo().GetGenericArguments()[0].AssemblyQualifiedName;
                 int index1 = field.Name.IndexOf('<');
                 int index2 = field.Name.IndexOf('>');
                 string fieldName = field.Name.Substring(index1 + 1, index2 - index1 - 1);
+                string fullFieldName = field.Name;
                 if (type.Contains("InVariable"))
                 {
-                    InVariableParams.Add(fieldName); // display name
+                    InVariableParams.Add(fieldName); // display name                    
                     InVariableParams.Add(innerType); // type of value
                     InVariableParams.Add("False"); // isExternal
                     InVariableParams.Add(""); // value
                     InVariableParams.Add(""); // variableName
+                    InVariableParams.Add(fullFieldName);
                     
                 }
                 if (type.Contains("OutVariable"))
@@ -58,6 +61,7 @@ public class Node
                     OutVariableParams.Add(fieldName);
                     OutVariableParams.Add(innerType); // type of value
                     OutVariableParams.Add(""); // outVariableName
+                    OutVariableParams.Add(fullFieldName); // fullFieldName
                 }
             }
         }

@@ -10,10 +10,6 @@ using System.Globalization;
 [Serializable]
 public class BTree : ScriptableObject
 {
-    int TYPEOFVALUE = 0;
-    int ISEXTERNAL = 1;
-    int VALUE = 2;
-    int VARIABLENAME = 3;    
 
     public string TreesName;
     public List<Node> nodes;
@@ -38,69 +34,77 @@ public class BTree : ScriptableObject
         IBehaviourTreeNode resultNode;
         Type nodeType = Type.GetType(node.type);
         resultNode = (IBehaviourTreeNode)Activator.CreateInstance(nodeType);
-        //int 
-        foreach (var field in node.InVariableParams.Keys)
+        //int count
+        int countInnerValues = node.InVariableParams.Count / 6;
+        for (int i = 0; i < countInnerValues; i++)
         {
-            var type = node.InVariableParams[field][TYPEOFVALUE];
-            var isExternal = node.InVariableParams[field][ISEXTERNAL];
-            var value = node.InVariableParams[field][VALUE];
-            var variableName = node.InVariableParams[field][VARIABLENAME];
-            FieldInfo tempField = nodeType.GetField(field, BindingFlags.Instance |
+            string type = node.InVariableParams[i * 6 + 1];
+            string isExternal = node.InVariableParams[i * 6 + 2];
+            string value = node.InVariableParams[i * 6 + 3];
+            string variableName = node.InVariableParams[i * 6 + 4];
+            FieldInfo tempField = nodeType.GetField(node.InVariableParams[i * 6 + 5], BindingFlags.Instance |
                 BindingFlags.NonPublic |
                 BindingFlags.Public);
-
             if (isExternal.Contains("True"))
             {
-                tempField.SetValue(resultNode, externalValues[variableName]);
+                object setValue = null;
+                var temp = Activator.CreateInstance(Type.GetType(type), externalValues[variableName]);
+                setValue = temp;
+                tempField.SetValue(resultNode, setValue);
             }
             else
             {
                 object setValue = null;
-                if(type.Contains("System.Single"))
+                if (type.Contains("System.Single"))
                 {
                     float f = 0;
                     float.TryParse(value, out f);
-                    setValue = f;
+                    var temp = Activator.CreateInstance(Type.GetType(type),f);
+                    setValue = temp;
                 }
                 if (type.Contains("Vector3"))
                 {
                     Vector3 vector3 = StringToVector3(value);
-                    setValue = vector3;
+                    var temp = Activator.CreateInstance(Type.GetType(type),vector3);
+                    setValue = temp;
                 }
                 if (type.Contains("Int32"))
                 {
-                    int i = 0;
-                    int.TryParse(value, out i);
-                    setValue = i;
+                    int j = 0;
+                    int.TryParse(value, out j);
+                    var temp = Activator.CreateInstance(Type.GetType(type));
+                    setValue = temp;
+                    temp = j;
                 }
                 tempField.SetValue(resultNode, setValue);
             }
-            
+
         }
-        foreach( var field in node.OutVariableParams.Keys)
+
+        int countOutValues = node.OutVariableParams.Count / 4;
+        for (int i = 0; i < countOutValues; i++)
         {
-            var type = node.OutVariableParams[field][TYPEOFVALUE];
-            var variableName = node.OutVariableParams[field][VARIABLENAME];
-            FieldInfo tempField = nodeType.GetField(field, BindingFlags.Instance |
+            var type = node.OutVariableParams[i * 4 + 1];
+            string variableName = node.OutVariableParams[i * 4 + 2];
+            FieldInfo tempField = nodeType.GetField(node.OutVariableParams[i * 4 + 3], BindingFlags.Instance |
                 BindingFlags.NonPublic |
                 BindingFlags.Public);
             object setValue = null;
-            if (type.Contains("System.Single"))
-            {                
-                setValue = new float();
-            }
-            if (type.Contains("Vector3"))
-            {
-                setValue = new Vector3();
-            }
-            if (type.Contains("Int32"))
-            {
-                setValue = new int();
-            }
+
+            //Делаем промежуточную переменную
+            var innerType = Type.GetType(type).GetGenericArguments()[0];
+            var initVal = Activator.CreateInstance(innerType);
+            var VariableType = typeof(Variable<>).MakeGenericType(innerType);
+            var tempVariable = Activator.CreateInstance(VariableType);
+            var setM = VariableType.GetMethod("Set");
+            setM.Invoke(tempVariable,new[] { initVal });
+
+            setValue = Activator.CreateInstance(Type.GetType(type),tempVariable);
             tempField.SetValue(resultNode, setValue);
-            externalValues.Add(variableName, setValue);
+            externalValues.Add(variableName, tempVariable);
         }
-        if(node.childNodesID.Count>0)
+
+        if (node.childNodesID.Count>0)
         {
             foreach(var nodeID in node.childNodesID)
             {

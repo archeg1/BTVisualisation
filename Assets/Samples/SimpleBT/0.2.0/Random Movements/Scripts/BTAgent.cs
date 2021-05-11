@@ -18,7 +18,7 @@ public class BTAgent : MonoBehaviour
         //        new GetRandomPoint { Radius = 5, Output = moveTarget },
         //        new MoveTo { Target = new Vector3(3,5,4) },
         //        new GetRandomFloat { Min = 0.5f, Max = 2f, Output = waitTime },
-        //        new Wait { Time = waitTime},               
+        //        new Wait { Time = waitTime},
         //    }
         //};
         _tree = behavior.CreateRuntimeTree();
