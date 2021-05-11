@@ -85,26 +85,32 @@ public class BTEditor : EditorWindow
             if (GUILayout.Button("Create new \"Behavior tree\""))
             {
                 path = EditorUtility.SaveFilePanel("Save behavior tree", "Assets", "BehaviorTree", "asset");
-                path = path.Substring(path.IndexOf("Assets"), path.Length - path.IndexOf("Assets"));
-                curBTrees = ScriptableObject.CreateInstance<BTree>();
-                curBTrees.TreesName = path.Replace(".asset", "");
-                curBTrees.nodes = new List<Node>();
-                Node root = new Node(new Vector2(50,10), typeof(RepeatForever).AssemblyQualifiedName, "Root", 0);
-                curBTrees.nodes.Add(root);
-                EditorUtility.SetDirty(curBTrees);
-                AssetDatabase.CreateAsset(curBTrees, path);
-                AssetDatabase.SaveAssets();
-                Selection.activeObject = curBTrees;
-                so = new SerializedObject(curBTrees);
-                parentNode = null;
+                if (path.Length > 0)
+                {
+                    path = path.Substring(path.IndexOf("Assets"), path.Length - path.IndexOf("Assets"));
+                    curBTrees = ScriptableObject.CreateInstance<BTree>();
+                    curBTrees.TreesName = path.Replace(".asset", "");
+                    curBTrees.nodes = new List<Node>();
+                    Node root = new Node(new Vector2(50, 10), typeof(RepeatForever).AssemblyQualifiedName, "Root", 0);
+                    curBTrees.nodes.Add(root);
+                    EditorUtility.SetDirty(curBTrees);
+                    AssetDatabase.CreateAsset(curBTrees, path);
+                    AssetDatabase.SaveAssets();
+                    Selection.activeObject = curBTrees;
+                    so = new SerializedObject(curBTrees);
+                    parentNode = null;
+                }
             }
             if (GUILayout.Button("Open \"Behavior tree\""))
             {
-                string result = EditorUtility.OpenFilePanel("Open behavior tree", "Assets", "asset");
-                result = result.Substring(result.IndexOf("Assets"), result.Length - result.IndexOf("Assets"));
-                curBTrees = (BTree)AssetDatabase.LoadAssetAtPath(result, typeof(BTree));
-                so = new SerializedObject(curBTrees);
-                parentNode = null;
+                path = EditorUtility.OpenFilePanel("Open behavior tree", "Assets", "asset");
+                if (path.Length > 0)
+                {
+                    path = path.Substring(path.IndexOf("Assets"), path.Length - path.IndexOf("Assets"));
+                    curBTrees = (BTree)AssetDatabase.LoadAssetAtPath(path, typeof(BTree));
+                    so = new SerializedObject(curBTrees);
+                    parentNode = null;
+                }
             }
             if (curBTrees != null)
             {
@@ -339,19 +345,28 @@ public class BTEditor : EditorWindow
     {
 
         Node windowNode = null;
-        foreach (var node in curBTrees.nodes)
-        {
-            if (node.ID == unusedWindowID)
-            {
-                windowNode = node;
-                break;
-            }
-        }
+        //foreach (var node in curBTrees.nodes)
+        //{
+        //    if (node.ID == unusedWindowID)
+        //    {
+        //        windowNode = node;
+        //        break;
+        //    }
+        //}
+        windowNode = FindNodeByID(unusedWindowID);
         int lenght = windowNode.name.Length;
         var text = " ";
         for (int i = 0; i <lenght;i++)
         {
-            text += "  ";
+            text += "   ";
+        }
+        if (selectedNode != null)
+        {
+            if (windowNode.ID == selectedNode.ID)
+            {
+                GUI.backgroundColor = Color.green;
+                GUI.color = Color.green;
+            }
         }
         GUILayout.Label(text);
         Event e = Event.current;
@@ -361,9 +376,10 @@ public class BTEditor : EditorWindow
             {
                 OpenNodeContextMenu(windowNode.baseType, windowNode);
             }
-            if (e.button == 0 && parentNode != null)
+            if (e.button == 0 && parentNode != null && unusedWindowID!=0)
             {
-                parentNode.childNodesID.Add(windowNode.ID);
+                if(!parentNode.childNodesID.Contains(windowNode.ID))
+                    parentNode.childNodesID.Add(windowNode.ID);
                 parentNode = null;
             }
             if (e.button == 0)
@@ -382,10 +398,18 @@ public class BTEditor : EditorWindow
         {
             menu.AddItem(new GUIContent("AddChild"), false, () => OnAddChildSelected(windowNode));
         }
+        menu.AddItem(new GUIContent("Remove connections"), false, () => OnRemoveParentSelected(windowNode.ID));
         menu.ShowAsContext();
 
     }
 
+    void OnRemoveParentSelected(int ID)
+    {
+        foreach(var node in curBTrees.nodes)
+        {
+            node.childNodesID.Remove(ID);
+        }
+    }
     void OnAddChildSelected( Node p)
     {
         parentNode = p;
