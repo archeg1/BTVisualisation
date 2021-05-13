@@ -20,7 +20,7 @@ public class BTEditor : EditorWindow
 
     string path = "";
 
-    Node parentNode = null;
+    static Node parentNode = null;
 
     Node selectedNode = null;
     
@@ -57,7 +57,6 @@ public class BTEditor : EditorWindow
 
         if (curBTrees != null)
         {
-            so.Update();
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(curBTrees);
@@ -220,15 +219,14 @@ public class BTEditor : EditorWindow
         // Each editor window contains a root VisualElement object
         VisualElement root = rootVisualElement;
         float temp = root.layout.width;
-
+        parentNode = null;
     }
 
     public static void Open(BTree bTree)
     {
         BTEditor window = GetWindow<BTEditor>("Behavior tree Editor");
         curBTrees = bTree;
-
-        so = new SerializedObject(curBTrees);
+        parentNode = null;
     }
 
     void HandleEvents(Event e)
@@ -387,7 +385,7 @@ public class BTEditor : EditorWindow
                 selectedNode = windowNode;
             }
         }
-        GUI.DragWindow(new Rect(0, 0, 10000, 20));
+        GUI.DragWindow();
     }
 
     void OpenNodeContextMenu(string rootType, Node windowNode)

@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f5001f834eb15745bbfe2184a938dcc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behavior: {fileID: 11400000, guid: bf0171926b6004348a0a52e812e7c9eb, type: 2}
+  behavior: {fileID: 11400000, guid: 160b55ca0bec0d64f9adc7dff7cafb3f, type: 2}
 --- !u!4 &79356229
 Transform:
   m_ObjectHideFlags: 0
